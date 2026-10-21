@@ -1,0 +1,13 @@
+{
+  "original_sha256": "bb648946419dbd10a96787d892e8d45f868ba4ea76d8595e59a2171e577914a8",
+  "patched_sha256": "812eabe13936471b46d56e15380627113e31fcc9445ecbf9ffca47b6dca8b60c",
+  "offset": 2798932,
+  "patch_length": 72,
+  "emulated_mode_cases": 756,
+  "virtual_psm_false_match_rejected": true,
+  "captured_peer_basic_config_result_before": 2,
+  "captured_peer_basic_config_result_after": 1,
+  "outgoing_configuration_uses_basic_without_fcr_option": true,
+  "callee_saved_registers_stack_and_shadow_stack_preserved": true,
+  "limitations": "Function-level emulation; actual controller and AirPods negotiation must be tested separately."
+}

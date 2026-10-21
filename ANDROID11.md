@@ -25,7 +25,9 @@ uninstalling that APK first, which removes its app data.
 The separately produced OnePlus 7 Pro Magisk module is still required for that
 phone's Android 11 Bluetooth stack. The APK does not install it. The module is
 restricted to the specific extracted ROM library; it is not a generic patch
-for every Android 11 device. Hardware testing is pending. CI artifacts remain
+for every Android 11 device. The test2 module now has initial hardware validation
+on the target phone; see [module sources and results](extras/oneplus7pro-magisk/README.md).
+CI artifacts remain
 unsigned; the downloaded APK is signed and verified locally before installation.
 
 ## Compatibility changes
@@ -117,6 +119,14 @@ and Android 11/13 startup and permission screens in Robolectric. The final
 delivery report records which checks actually passed. Robolectric runs Android
 framework behavior on the JVM; it is not a Bluetooth controller or an AirPods
 simulator. Compilation and API lint alone do not establish hardware operation.
+
+The target OnePlus 7 Pro subsequently connected to AirPods Pro 3 model A3064
+with the test2 Magisk module and this existing APK. Battery reporting,
+device-confirmed noise-mode changes, audio-profile reconnection, app restart
+and a brief screen-off test passed while Phone permission stayed denied.
+The initial module needed a Basic Mode negotiation correction; see the
+[hardware validation record](extras/oneplus7pro-magisk/VALIDATION.md) for evidence
+and the remaining test boundaries.
 
 All phone tests must go through **Agent ADB**. After release signing, validate:
 

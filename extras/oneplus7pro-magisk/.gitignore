@@ -1,0 +1,8 @@
+/verification/
+__pycache__/
+.venv/
+*.so
+*.zip
+*.apk
+*.p12
+*.jks

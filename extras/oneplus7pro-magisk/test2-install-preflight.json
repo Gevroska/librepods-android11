@@ -1,0 +1,78 @@
+{
+  "environment": "Linux BusyBox ash with simulated Magisk paths and properties",
+  "limitations": "No device execution, mounts, SELinux, or Magisk installation was tested. Permission helpers are mocked.",
+  "cases": [
+    {
+      "case": "exact library installs and valid boot enables overlay",
+      "passed": true
+    },
+    {
+      "case": "different source library rejected",
+      "passed": true
+    },
+    {
+      "case": "different Android API rejected",
+      "passed": true
+    },
+    {
+      "case": "different architecture rejected",
+      "passed": true
+    },
+    {
+      "case": "different device rejected",
+      "passed": true
+    },
+    {
+      "case": "recovery installation rejected",
+      "passed": true
+    },
+    {
+      "case": "corrupt payload rejected",
+      "passed": true
+    },
+    {
+      "case": "conflicting module rejected at installation",
+      "passed": true
+    },
+    {
+      "case": "ROM library change disables at boot",
+      "passed": true
+    },
+    {
+      "case": "module corruption disables at boot",
+      "passed": true
+    },
+    {
+      "case": "missing metadata disables at boot",
+      "passed": true
+    },
+    {
+      "case": "Android version change disables at boot",
+      "passed": true
+    },
+    {
+      "case": "conflicting module disables at boot",
+      "passed": true
+    },
+    {
+      "case": "known test1 overlay upgrades without changing source",
+      "passed": true
+    },
+    {
+      "case": "known current overlay reinstalls without changing source",
+      "passed": true
+    },
+    {
+      "case": "corrupt rollback payload rejected by original hash",
+      "passed": true
+    },
+    {
+      "case": "different model rejected",
+      "passed": true
+    }
+  ],
+  "attribution": "Gevroska",
+  "busybox_package": "busybox-1.37.0-3.fc43.x86_64.rpm",
+  "busybox_rpm_signature": "Verified using the local Fedora RPM trust store",
+  "busybox_binary_sha256": "3eb850782c81284485c2e6cff3176459d1c33faea391a2b81224ff5220dc25d9"
+}

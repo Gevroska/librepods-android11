@@ -1,0 +1,7 @@
+# Preserve the exact installed ZIP payload, including its original text bytes.
+module/** -text
+module/LICENSE whitespace=cr-at-eol
+module/patch-manifest.json whitespace=cr-at-eol
+# These frozen installer scripts include a trailing blank line.
+module/checks.sh whitespace=-blank-at-eof
+module/customize.sh whitespace=-blank-at-eof

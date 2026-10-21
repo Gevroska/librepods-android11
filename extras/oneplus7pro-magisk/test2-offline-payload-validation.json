@@ -1,0 +1,16 @@
+{
+  "attribution": "Gevroska",
+  "zip_sha256": "efe278ebac1f7d5dc63f8aef1d081d6d6ea997824d039a15449ad82000861405",
+  "stock_sha256": "bb648946419dbd10a96787d892e8d45f868ba4ea76d8595e59a2171e577914a8",
+  "patched_sha256": "812eabe13936471b46d56e15380627113e31fcc9445ecbf9ffca47b6dca8b60c",
+  "patch_file_offset": "0x2ab554",
+  "patch_length": 72,
+  "restored_entry_bytes": "ff8305d15e8600f8",
+  "only_changed_region": [
+    "0x2ab554",
+    "0x2ab59c"
+  ],
+  "changed_byte_count": 65,
+  "phone_installation": "not started",
+  "activation": "User reboot required; no reboot command will be issued."
+}
