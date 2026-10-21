@@ -57,10 +57,11 @@ for every Android 11 device. Hardware testing and release signing are pending.
 ## Build locally
 
 Use JDK 21 and the checked-in Gradle wrapper (9.4.1). Install Android command-line
-tools, set `ANDROID_HOME`, and install the versions pinned by the project:
+tools 23.0 (build 16111833), set `ANDROID_HOME`, and install the versions pinned
+by the project:
 
 ```sh
-sdkmanager 'platforms;android-37' 'build-tools;37.0.0' 'ndk;30.0.14904198' 'cmake;3.22.1'
+sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;30.0.14904198' 'cmake;3.22.1'
 cd android
 ./gradlew --no-daemon --no-configuration-cache --max-workers=2 -Pandroid11ApiCheck lintFossDebug testFossDebugUnitTest assembleFossRelease
 ```
