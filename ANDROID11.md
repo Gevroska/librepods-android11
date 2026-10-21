@@ -25,7 +25,8 @@ uninstalling that APK first, which removes its app data.
 The separately produced OnePlus 7 Pro Magisk module is still required for that
 phone's Android 11 Bluetooth stack. The APK does not install it. The module is
 restricted to the specific extracted ROM library; it is not a generic patch
-for every Android 11 device. Hardware testing and release signing are pending.
+for every Android 11 device. Hardware testing is pending. CI artifacts remain
+unsigned; the downloaded APK is signed and verified locally before installation.
 
 ## Compatibility changes
 
@@ -91,9 +92,9 @@ Play, or send messages. The inherited Android publishing workflow was replaced.
 Builds and test reports are available from the fork's
 [Android workflow](https://github.com/Gevroska/librepods-android11/actions/workflows/ci-android.yml).
 Download the `LibrePods-Android11-unsigned` artifact from a successful run.
-The APK must be signed locally before installation. Release-key creation and
-storage will be set up with the owner.
-Then align the APK, sign it locally using Android SDK `apksigner`, verify its
+The APK must be signed locally before installation. Keep the release key on the
+local signing machine and reuse it for every update.
+Align the APK, sign it locally using Android SDK `apksigner`, verify its
 signature, and compute a new checksum of the signed APK. Alignment must precede
 signing; do not change the APK after signing. Keep a secure backup of the same
 private key for future updates. The unsigned checksum will differ from the
@@ -106,6 +107,10 @@ On 21 October 2026, the focused API audit completed with zero errors and zero
 warnings. All 16 automated test cases passed: four SDK/model policy cases,
 two socket-constructor cases, four call-state cases, four permission-screen
 cases, and two startup/cleanup cases. The framework tests run on API 30 and 33.
+
+[GitHub Actions run 39605291144](https://github.com/Gevroska/librepods-android11/actions/runs/39605291144)
+also passed these checks. Its downloaded APK was signed locally and its signature
+verified for API 30. All original APK file contents were unchanged by signing.
 
 Automated tests cover the permission boundaries, retained Pro 3 model mapping,
 and Android 11/13 startup and permission screens in Robolectric. The final
