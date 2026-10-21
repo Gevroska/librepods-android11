@@ -574,7 +574,7 @@ fun AppSettingsScreen(
                                    "\nMANUFACTURER: ${Build.MANUFACTURER}" +
                                    "\nMODEL: ${Build.MODEL} (${Build.PRODUCT})" +
                                    "\nDISPLAY_VERSION: ${Build.DISPLAY}" +
-                                   "\nID: ${Build.ID} (SDK ${Build.VERSION.SDK_INT_FULL})" +
+                                   "\nID: ${Build.ID} (SDK ${Build.VERSION.SDK_INT})" +
                                    "\nXposed enabled/active: ${XposedState.isAvailable}/${XposedState.bluetoothScopeEnabled}" +
                                    "\n\nApp details:" +
                                    "\nVERSION: ${BuildConfig.VERSION_NAME}" +

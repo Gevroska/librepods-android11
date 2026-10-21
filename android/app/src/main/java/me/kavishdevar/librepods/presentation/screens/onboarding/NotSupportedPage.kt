@@ -1,5 +1,6 @@
 package me.kavishdevar.librepods.presentation.screens.onboarding
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,18 +45,21 @@ fun NotSupportedPage(
         ) {
             Spacer(modifier = Modifier)
             Text(
-                text = stringResource(R.string.not_compatible_update),
+                text = if (Build.VERSION.SDK_INT <= 32) "A Bluetooth compatibility patch is required on this device."
+                    else stringResource(R.string.not_compatible_update),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
-                text = stringResource(R.string.not_compatitble_description),
+                text = if (Build.VERSION.SDK_INT <= 32) "This fork supports Android 11, but the system Bluetooth limitation still needs a compatible patch. Install your device-specific Magisk module and reboot before continuing. This screen cannot verify that the patch is active."
+                    else stringResource(R.string.not_compatitble_description),
                 style = MaterialTheme.typography.bodyMedium,
             )
             DeviceInfoCard()
             AppInfoCard()
             if (!BuildConfig.PLAY_BUILD) {
                 StyledListItem(
-                    name = stringResource(R.string.bypass_compatibility_check),
+                    name = if (Build.VERSION.SDK_INT <= 32) "I have installed the Bluetooth patch"
+                        else stringResource(R.string.bypass_compatibility_check),
                     onClick = bypassCompatibilityCheck
                 )
             }

@@ -58,7 +58,7 @@ import android.os.ParcelUuid
 import android.os.UserHandle
 import android.provider.Settings
 import android.telecom.TelecomManager
-import android.telephony.TelephonyCallback
+import me.kavishdevar.librepods.utils.CallStateMonitor
 import android.telephony.TelephonyManager
 import android.util.Log
 import android.util.TypedValue
@@ -227,7 +227,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
     val packetLogsFlow: StateFlow<Set<String>> get() = _packetLogsFlow
 
     private lateinit var telephonyManager: TelephonyManager
-    private lateinit var phoneStateListener: TelephonyCallback
+    private var callStateMonitor: CallStateMonitor? = null
     private val maxLogEntries = 1000
     private val inMemoryLogs = mutableSetOf<String>()
 
@@ -242,7 +242,6 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
     }
 
     private val bleStatusListener = object : BLEManager.AirPodsStatusListener {
-        @SuppressLint("NewApi")
         override fun onDeviceStatusChanged(
             device: BLEManager.AirPodsStatus, previousStatus: BLEManager.AirPodsStatus?
         ) {
@@ -595,43 +594,38 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         macAddress = sharedPreferences.getString("mac_address", "") ?: ""
 
         telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
-        phoneStateListener = object: TelephonyCallback(), TelephonyCallback.CallStateListener {
-            override fun onCallStateChanged(state: Int) {
-                when (state) {
-                    TelephonyManager.CALL_STATE_RINGING -> {
-                        val leAvailableForAudio =
-                            bleManager.getMostRecentStatus()?.isLeftInEar == true || bleManager.getMostRecentStatus()?.isRightInEar == true
+        callStateMonitor = CallStateMonitor(this) { state ->
+            when (state) {
+                TelephonyManager.CALL_STATE_RINGING -> {
+                    val leAvailableForAudio =
+                        bleManager.getMostRecentStatus()?.isLeftInEar == true || bleManager.getMostRecentStatus()?.isRightInEar == true
 //                        if ((CrossDevice.isAvailable && !isConnectedLocally && earDetectionNotification.status.contains(0x00)) || leAvailableForAudio) CoroutineScope(Dispatchers.IO).launch {
-                        if (leAvailableForAudio) runBlocking {
-                            takeOver("call")
-                        }
-                        if (config.headGestures) {
-                            handleIncomingCall()
-                        }
+                    if (leAvailableForAudio) runBlocking {
+                        takeOver("call")
                     }
-
-                    TelephonyManager.CALL_STATE_OFFHOOK -> {
-                        val leAvailableForAudio =
-                            bleManager.getMostRecentStatus()?.isLeftInEar == true || bleManager.getMostRecentStatus()?.isRightInEar == true
-//                        if ((CrossDevice.isAvailable && !isConnectedLocally && earDetectionNotification.status.contains(0x00)) || leAvailableForAudio) CoroutineScope(
-                        if (leAvailableForAudio) CoroutineScope(
-                            Dispatchers.IO
-                        ).launch {
-                            takeOver("call")
-                        }
-                        isInCall = true
-                    }
-
-                    TelephonyManager.CALL_STATE_IDLE -> {
-                        isInCall = false
-                        gestureDetector?.stopDetection()
+                    if (config.headGestures) {
+                        handleIncomingCall()
                     }
                 }
+
+                TelephonyManager.CALL_STATE_OFFHOOK -> {
+                    val leAvailableForAudio =
+                        bleManager.getMostRecentStatus()?.isLeftInEar == true || bleManager.getMostRecentStatus()?.isRightInEar == true
+//                        if ((CrossDevice.isAvailable && !isConnectedLocally && earDetectionNotification.status.contains(0x00)) || leAvailableForAudio) CoroutineScope(
+                    if (leAvailableForAudio) CoroutineScope(
+                        Dispatchers.IO
+                    ).launch {
+                        takeOver("call")
+                    }
+                    isInCall = true
+                }
+
+                TelephonyManager.CALL_STATE_IDLE -> {
+                    isInCall = false
+                    gestureDetector?.stopDetection()
+                }
             }
-        }
-        if (checkSelfPermission("android.permission.READ_PHONE_STATE") == PackageManager.PERMISSION_GRANTED) {
-            telephonyManager.registerTelephonyCallback(mainExecutor, phoneStateListener)
-        }
+        }.also { it.start() }
 
         if (config.showPhoneBatteryInWidget) {
             widgetMobileBatteryEnabled = true
@@ -759,7 +753,6 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                 if (device.uuids.contains(ParcelUuid.fromString("74ec2172-0bad-4d01-8f77-997b2be0722a"))) {
                     bluetoothAdapter.getProfileProxy(
                         this, object : BluetoothProfile.ServiceListener {
-                            @SuppressLint("NewApi")
                             override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
                                 if (profile == BluetoothProfile.A2DP) {
                                     val connectedDevices = proxy.connectedDevices
@@ -1072,7 +1065,6 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                 )
             }
 
-            @SuppressLint("NewApi")
             override fun onHeadTrackingReceived(headTracking: ByteArray) {
                 if (isHeadTrackingActive) {
                     HeadTracking.processPacket(headTracking)
@@ -2902,7 +2894,11 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                 override fun onServiceDisconnected(profile: Int) {}
             }, BluetoothProfile.A2DP)
             try {
-                device?.disconnect()
+                if (Build.VERSION.SDK_INT >= 37) {
+                    device?.disconnect()
+                } else {
+                    disconnectAudio(this, device)
+                }
             } catch (e: Exception) {
                 Log.w(TAG, "device.disconnect() failed, $e")
             }
@@ -3092,7 +3088,17 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
 
         if (config.deviceName != name) {
             config.deviceName = name
-            device?.alias = name
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    device?.alias = name
+                } else {
+                    // setAlias exists as a hidden method on Android 11.
+                    device?.javaClass?.getMethod("setAlias", String::class.java)?.invoke(device, name)
+                }
+            } catch (error: Exception) {
+                // The AirPods rename and app preference do not depend on the local alias.
+                Log.w(TAG, "Could not update the local Bluetooth alias", error)
+            }
             sharedPreferences.edit { putString("name", name) }
         }
 
@@ -3132,9 +3138,8 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        if (checkSelfPermission("android.permission.READ_PHONE_STATE") == PackageManager.PERMISSION_GRANTED) {
-            telephonyManager.unregisterTelephonyCallback(phoneStateListener)
-        }
+        callStateMonitor?.stop()
+        callStateMonitor = null
 //        isConnectedLocally = false
 //        CrossDevice.isAvailable = true
         super.onDestroy()

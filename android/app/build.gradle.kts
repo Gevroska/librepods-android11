@@ -51,7 +51,7 @@ android {
         applicationId = "me.kavishdevar.librepods"
         targetSdk = 37
         versionCode = appVersionCode
-        versionName = appVersionName
+        versionName = "$appVersionName-android11.1"
     }
     buildTypes {
         release {
@@ -69,7 +69,7 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
             defaultConfig {
-                minSdk = 33
+                minSdk = 30
             }
         }
         debug {
@@ -78,7 +78,7 @@ android {
             }
             versionNameSuffix = "-debug"
             defaultConfig {
-                minSdk = 33
+                minSdk = 30
             }
         }
     }
@@ -103,6 +103,13 @@ android {
         viewBinding = true
         buildConfig = true
     }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            it.maxHeapSize = "1024m"
+            it.maxParallelForks = 1
+        }
+    }
     androidResources {
         generateLocaleConfig = true
     }
@@ -110,6 +117,12 @@ android {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
+        }
+    }
+    lint {
+        // A focused API audit is available without hiding unrelated lint findings.
+        if (providers.gradleProperty("android11ApiCheck").isPresent) {
+            checkOnly += setOf("NewApi", "InlinedApi")
         }
     }
     sourceSets {
@@ -124,6 +137,10 @@ android {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.16.1")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.accompanist.permissions)
     implementation(libs.androidx.compose.ui.text.google.fonts)

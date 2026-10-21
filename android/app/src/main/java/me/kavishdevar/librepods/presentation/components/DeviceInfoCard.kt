@@ -29,7 +29,7 @@ fun DeviceInfoCard() {
 
         StyledListItem(
             name = stringResource(R.string.version),
-            description = "${Build.ID} (${Build.VERSION.SDK_INT_FULL})",
+            description = "${Build.ID} (${Build.VERSION.SDK_INT})",
             enabled = false
         )
 

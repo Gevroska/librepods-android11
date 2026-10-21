@@ -19,6 +19,7 @@
 package me.kavishdevar.librepods.presentation.viewmodel
 
 import android.content.BroadcastReceiver
+import androidx.core.content.ContextCompat
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -230,6 +231,7 @@ class AirPodsViewModel(
     private val xposedRemotePref = XposedRemotePrefProvider.create()
 
     private lateinit var broadcastReceiver: BroadcastReceiver
+    private var broadcastReceiverRegistered = false
 
 //    private val _cameraAction = MutableStateFlow(
 //        sharedPreferences.getString("camera_action", null)
@@ -268,11 +270,16 @@ class AirPodsViewModel(
     }
 
     override fun onCleared() {
-        listeners.forEach { (id, listener) ->
-            controlRepo.remove(id, listener)
+        // Onboarding can be closed before the Bluetooth service initializes this model.
+        if (this::controlRepo.isInitialized) {
+            listeners.forEach { (id, listener) -> controlRepo.remove(id, listener) }
         }
-        service.aacpManager.customEqCallback = null
-        appContext.unregisterReceiver(broadcastReceiver)
+        if (this::service.isInitialized) service.aacpManager.customEqCallback = null
+        if (broadcastReceiverRegistered) {
+            appContext.unregisterReceiver(broadcastReceiver)
+            broadcastReceiverRegistered = false
+        }
+        super.onCleared()
     }
 
     private fun loadName() {
@@ -362,9 +369,10 @@ class AirPodsViewModel(
             addAction(AirPodsNotifications.AIRPODS_INFORMATION_UPDATED)
         }
 
-        appContext.registerReceiver(
-            broadcastReceiver, filter, Context.RECEIVER_NOT_EXPORTED
+        ContextCompat.registerReceiver(
+            appContext, broadcastReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED
         )
+        broadcastReceiverRegistered = true
     }
 
     fun setControlCommandValue(
