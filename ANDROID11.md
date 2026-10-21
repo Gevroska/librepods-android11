@@ -16,7 +16,7 @@ covers the Android 11 fork.
 
 The FOSS build supports Android 11 / API 30 and retains upstream AirPods Pro 3
 model recognition, capabilities and protocol handling. Its label is
-**LibrePods Android 11**, and its version has the suffix `-android11.2`.
+**LibrePods Android 11**, and its version has the suffix `-android11.3`.
 The package ID remains `me.kavishdevar.librepods` to preserve compatibility with
 the upstream Xposed integration and optional system-app module. This fork is
 not signed by upstream. Installing over an upstream-signed APK will require
@@ -77,7 +77,14 @@ feeding them to the motion parser; malformed frames still produce warnings. This
 not claim complete head-tracking support. Cross-device media information is explicitly
 skipped when no other host is connected; that condition is not an AirPods disconnect.
 
-Hardware validation of this APK update is pending. The earlier android11.1/test2
+The android11.2 phone tests confirmed device control and exposed an upstream
+dependency: disabling automatic ear detection also prevented the connection
+Island from appearing. In android11.3, a successful control-socket connection
+triggers the popup directly. Its own popup preference and overlay permission still
+apply. Ear detection controls automatic playback independently and no longer opens
+or closes the connection popup. Fresh battery reports update the visible popup.
+
+Hardware validation of android11.3 is pending. The earlier android11.1/test2
 control-channel results remain documented in the module validation guide.
 
 Implementation references: [Compose effect ownership](https://developer.android.com/develop/ui/compose/side-effects#disposableeffect),

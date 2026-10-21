@@ -1239,24 +1239,6 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                 data[0] == 0x00.toByte(), data[1] == 0x00.toByte()
             )
 
-            if (inEarData.sorted() == listOf(false, false) && newInEarData.sorted() != listOf(
-                    false, false
-                ) && islandWindow?.isVisible != true
-            ) {
-                showIsland(
-                    this@AirPodsService,
-                    (batteryNotification.getBattery()
-                        .find { it.component == BatteryComponent.LEFT }?.level ?: 0).coerceAtMost(
-                        batteryNotification.getBattery()
-                            .find { it.component == BatteryComponent.RIGHT }?.level ?: 0
-                    )
-                )
-            }
-
-            if (newInEarData == listOf(false, false) && islandWindow?.isVisible == true) {
-                islandWindow?.close()
-            }
-
             if (newInEarData.contains(true) && inEarData == listOf(false, false)) {
                 connectAudio(this@AirPodsService, device)
                 justEnabledA2dp = true
@@ -1667,6 +1649,17 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
 
     var islandOpen = false
     var islandWindow: IslandWindow? = null
+
+    internal fun showConnectedIsland() {
+        // Connection feedback is independent of automatic ear detection and playback.
+        // The overlay subscribes to fresh battery reports after the socket opens.
+        val level = batteryNotification.getBattery()
+            .filter { it.component == BatteryComponent.LEFT || it.component == BatteryComponent.RIGHT }
+            .map { it.level }
+            .filter { it > 0 }
+            .minOrNull() ?: 0
+        showIsland(this, level)
+    }
 
     @SuppressLint("MissingPermission")
     fun showIsland(
@@ -2689,6 +2682,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                             }
                         }
                         sendBroadcast(Intent(AirPodsNotifications.AIRPODS_L2CAP_CONNECTED))
+                        showConnectedIsland()
                     } catch (e: Exception) {
 //                        sharedPreferences.edit { putBoolean("connection_successful", false) }
                         Log.d(
