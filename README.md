@@ -3,6 +3,8 @@
 An unofficial LibrePods fork for Android 11, retaining AirPods Pro 3 support.
 **Experimental:** initial tests passed on a OnePlus 7 Pro; validation is ongoing.
 
+[Download the signed APK and OnePlus 7 Pro module](https://github.com/Gevroska/librepods-android11/releases/tag/v1.0.4-android11.3).
+The module requires the exact supported ROM; the same phone or chipset is not enough.
 See [setup, builds and technical details](ANDROID11.md).
 
 The original LibrePods documentation follows below.

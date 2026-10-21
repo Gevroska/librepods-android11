@@ -121,6 +121,13 @@ is not the future release key and should not be used for distributed releases.
 
 ## GitHub Actions and signing
 
+For installation, use the signed APK from the
+[published experimental release](https://github.com/Gevroska/librepods-android11/releases/tag/v1.0.4-android11.3).
+It is ready to install and uses this fork's existing release key. The release also
+includes the tested OnePlus 7 Pro test2 Magisk ZIP and checksums. That module requires
+the exact supported device and ROM Bluetooth library; matching a chipset is not
+sufficient. Review its compatibility notes before installing it.
+
 `.github/workflows/ci-android.yml` builds on ordinary GitHub-hosted Ubuntu
 runners. It checks APIs, runs unit tests, builds the unsigned FOSS release,
 inspects its minimum SDK, and uploads the APK, checksum and test reports.
