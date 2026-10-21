@@ -84,8 +84,11 @@ triggers the popup directly. Its own popup preference and overlay permission sti
 apply. Ear detection controls automatic playback independently and no longer opens
 or closes the connection popup. Fresh battery reports update the visible popup.
 
-Hardware validation of android11.3 is pending. The earlier android11.1/test2
-control-channel results remain documented in the module validation guide.
+The installed android11.3 passed the natural connection-popup check with automatic
+ear detection OFF on the target phone, including user visual confirmation. See the
+[runtime validation record](ANDROID11-VALIDATION.md) for evidence and test boundaries.
+The earlier android11.1/test2 control-channel results remain documented in the
+module validation guide.
 
 Implementation references: [Compose effect ownership](https://developer.android.com/develop/ui/compose/side-effects#disposableeffect),
 [TextureView compositing](https://developer.android.com/reference/android/view/TextureView).
@@ -138,8 +141,19 @@ device extraction to Git.
 
 ## Validation boundaries
 
-On 21 October 2026, the focused API audit completed with zero errors and zero
-warnings. All 16 automated test cases passed: four SDK/model policy cases,
+For android11.3, [GitHub Actions run 39667232320](https://github.com/Gevroska/librepods-android11/actions/runs/39667232320)
+passed all 23 automated test cases and the focused API audit with zero issues.
+The added cases cover activity binding/cleanup, notification coalescing and
+disconnect cancellation, short protocol frame classification, and the connection
+Island with ear automation disabled. Popup tests exercise display, duplicate
+suppression, dismissal and reopening, plus the popup preference and overlay
+permission. They replace only the Android Bluetooth JNI static loader on the
+host JVM; the tested service and overlay methods remain real.
+The downloaded release was verified, signed locally with the existing key,
+and checked for Android 11 signature validity and unchanged APK file contents.
+
+The initial android11.1 validation on 21 October 2026 passed 16 cases:
+four SDK/model policy cases,
 two socket-constructor cases, four call-state cases, four permission-screen
 cases, and two startup/cleanup cases. The framework tests run on API 30 and 33.
 
@@ -154,7 +168,7 @@ framework behavior on the JVM; it is not a Bluetooth controller or an AirPods
 simulator. Compilation and API lint alone do not establish hardware operation.
 
 The target OnePlus 7 Pro subsequently connected to AirPods Pro 3 model A3064
-with the test2 Magisk module and this existing APK. Battery reporting,
+with the test2 Magisk module and android11.1. Battery reporting,
 device-confirmed noise-mode changes, audio-profile reconnection, app restart
 and a brief screen-off test passed while Phone permission stayed denied.
 The initial module needed a Basic Mode negotiation correction; see the
