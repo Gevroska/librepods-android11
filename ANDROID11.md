@@ -8,6 +8,10 @@ The published fork is
 [Gevroska/librepods-android11](https://github.com/Gevroska/librepods-android11),
 with `android11-backport` as its default branch.
 
+The README includes upstream documentation for reference. Its OS requirements,
+installation steps and download links may describe the original app; this guide
+covers the Android 11 fork.
+
 ## Scope and identity
 
 The FOSS build supports Android 11 / API 30 and retains upstream AirPods Pro 3
@@ -83,8 +87,11 @@ inspects its minimum SDK, and uploads the APK, checksum and test reports.
 It does not require signing secrets, publish a GitHub release, upload to Google
 Play, or send messages. The inherited Android publishing workflow was replaced.
 
-After the repository is published, download the `LibrePods-Android11-unsigned`
-artifact. Release-key creation and storage will be set up with the owner.
+Builds and test reports are available from the fork's
+[Android workflow](https://github.com/Gevroska/librepods-android11/actions/workflows/ci-android.yml).
+Download the `LibrePods-Android11-unsigned` artifact from a successful run.
+The APK must be signed locally before installation. Release-key creation and
+storage will be set up with the owner.
 Then align the APK, sign it locally using Android SDK `apksigner`, verify its
 signature, and compute a new checksum of the signed APK. Alignment must precede
 signing; do not change the APK after signing. Keep a secure backup of the same

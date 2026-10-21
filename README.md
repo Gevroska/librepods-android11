@@ -1,27 +1,11 @@
 # LibrePods Android 11 fork
 
-This is an unofficial Android 11 compatibility fork of LibrePods **v1.0.4**,
-based on upstream commit `89356c08cea3db0b6b54792d9329d09a87cc85fa`.
-Development branch: `android11-backport`. Upstream AirPods Pro 3 model support,
-protocol handling and feature definitions are retained.
+An unofficial LibrePods fork for Android 11, retaining AirPods Pro 3 support.
+**Experimental:** testing on a real device is still pending.
 
-The FOSS app targets a minimum of Android 11 (API 30). Android 11 still needs a
-compatible system Bluetooth workaround, such as the separately supplied,
-exact-ROM Magisk module for the OnePlus 7 Pro. This APK does not install that
-module. Hardware validation is pending; see [the fork guide](ANDROID11.md).
+See [setup, builds and technical details](ANDROID11.md).
 
-The fork builds **unsigned release APKs** for local signing. Its GitHub Actions
-workflow runs API checks and tests and uploads build artifacts; it does not
-create releases, deploy to Google Play, or require a private signing key.
-
-Builds and test reports are available from this fork's
-[Android workflow](https://github.com/Gevroska/librepods-android11/actions/workflows/ci-android.yml).
-Download the `LibrePods-Android11-unsigned` artifact from a successful run;
-the APK must be signed locally before installation.
-
-The original upstream documentation follows. Some upstream OS requirements,
-installation instructions and download links describe the upstream app rather
-than this fork; use [ANDROID11.md](ANDROID11.md) for this fork.
+The original LibrePods documentation follows below.
 
 ---
 
