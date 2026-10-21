@@ -4,7 +4,9 @@ This fork starts from upstream LibrePods v1.0.4, commit
 `89356c08cea3db0b6b54792d9329d09a87cc85fa`. It does not rebuild newer features on
 top of the old v0.1.0-rc.4 app. Upstream history is retained, with the adaptation
 on the `android11-backport` branch and the original repository named `upstream`.
-No GitHub fork or remote publication has been created yet.
+The published fork is
+[Gevroska/librepods-android11](https://github.com/Gevroska/librepods-android11),
+with `android11-backport` as its default branch.
 
 ## Scope and identity
 

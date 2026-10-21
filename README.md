@@ -14,6 +14,11 @@ The fork builds **unsigned release APKs** for local signing. Its GitHub Actions
 workflow runs API checks and tests and uploads build artifacts; it does not
 create releases, deploy to Google Play, or require a private signing key.
 
+Builds and test reports are available from this fork's
+[Android workflow](https://github.com/Gevroska/librepods-android11/actions/workflows/ci-android.yml).
+Download the `LibrePods-Android11-unsigned` artifact from a successful run;
+the APK must be signed locally before installation.
+
 The original upstream documentation follows. Some upstream OS requirements,
 installation instructions and download links describe the upstream app rather
 than this fork; use [ANDROID11.md](ANDROID11.md) for this fork.
