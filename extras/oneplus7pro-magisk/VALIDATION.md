@@ -40,9 +40,11 @@ the earlier ERTM request's 8087. No vendor identity spoofing was needed.
 - Audio-profile disconnect/reconnect retained pairing and was followed by
   device-confirmed mode changes. A separate app-only restart opened a fresh
   control socket and restored model identification and the control UI.
-- With LibrePods backgrounded and the screen off for approximately 31 seconds,
-  the foreground service remained alive. Incoming device packets confirmed
-  Transparency and restoration of Noise Cancellation. The phone was then woken.
+- With LibrePods backgrounded, the screen was off for approximately 18 seconds
+  within a 31-second observation. Incoming device packets confirmed Transparency
+  and restoration of Noise Cancellation before the recorded wake event.
+  The foreground service remained alive. Continuous screen-off operation for
+  the full observation period was not claimed.
 
 These tests were performed with USB/ADB attached. Long-term Doze, unplugged
 battery life, a full Bluetooth toggle, physical range/case cycles, calls,
