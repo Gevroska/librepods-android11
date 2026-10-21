@@ -34,7 +34,7 @@ jobs:
           APK=android/app/build/outputs/apk/foss/release/app-foss-release-unsigned.apk
           test -s "$APK"
           "$ANDROID_HOME/build-tools/37.0.0/aapt2" dump badging "$APK" > artifacts/apk-metadata.txt
-          grep -q "sdkVersion:'30'" artifacts/apk-metadata.txt
+          grep -qx "minSdkVersion:'30'" artifacts/apk-metadata.txt
           if "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify "$APK" >/dev/null 2>&1; then
             echo 'Expected an unsigned APK; refusing to publish a signed artifact.'
             exit 1
