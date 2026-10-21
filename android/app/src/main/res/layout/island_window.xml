@@ -6,6 +6,8 @@
     android:layout_height="wrap_content"
     android:layout_margin="16dp"
     android:background="@drawable/island_background"
+    android:forceDarkAllowed="false"
+    android:clipToOutline="true"
     android:elevation="4dp"
     android:gravity="center"
     android:minHeight="115dp"
@@ -14,9 +16,9 @@
     android:outlineSpotShadowColor="#4EFFFFFF"
     android:padding="8dp"
     android:clipToPadding="false"
-    android:clipChildren="false">
+    android:clipChildren="true">
 
-    <VideoView
+    <me.kavishdevar.librepods.presentation.overlays.IslandVideoView
         android:id="@+id/island_video_view"
         android:layout_width="80dp"
         android:layout_height="80dp"

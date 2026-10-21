@@ -51,7 +51,7 @@ android {
         applicationId = "me.kavishdevar.librepods"
         targetSdk = 37
         versionCode = appVersionCode
-        versionName = "$appVersionName-android11.1"
+        versionName = "$appVersionName-android11.2"
     }
     buildTypes {
         release {

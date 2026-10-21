@@ -53,13 +53,13 @@ fun createBluetoothSocket(
     var attemptedConstructors = 0
 
     for ((index, params) in constructorSpecs.withIndex()) {
+        val paramTypes = params.map { it::class.javaPrimitiveType ?: it::class.java }.toTypedArray()
+        val constructor = constructors.firstOrNull { it.parameterTypes.contentEquals(paramTypes) }
+            ?: continue
         try {
             Log.d("createSocket<psm>", "Trying constructor signature #${index + 1}")
             attemptedConstructors++
 
-            val paramTypes =
-                params.map { it::class.javaPrimitiveType ?: it::class.java }.toTypedArray()
-            val constructor = BluetoothSocket::class.java.getDeclaredConstructor(*paramTypes)
             constructor.isAccessible = true
             return constructor.newInstance(*params) as BluetoothSocket
 

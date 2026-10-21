@@ -16,7 +16,7 @@ covers the Android 11 fork.
 
 The FOSS build supports Android 11 / API 30 and retains upstream AirPods Pro 3
 model recognition, capabilities and protocol handling. Its label is
-**LibrePods Android 11**, and its version has the suffix `-android11.1`.
+**LibrePods Android 11**, and its version has the suffix `-android11.2`.
 The package ID remains `me.kavishdevar.librepods` to preserve compatibility with
 the upstream Xposed integration and optional system-app module. This fork is
 not signed by upstream. Installing over an upstream-signed APK will require
@@ -56,6 +56,32 @@ unsigned; the downloaded APK is signed and verified locally before installation.
 - Setup explains the Bluetooth patch requirement instead of telling Android 11
   users that they must upgrade their operating system. Continuing acknowledges
   the patch; it does not verify the module or claim Bluetooth success.
+
+## Runtime fixes in android11.2
+
+The activity now owns a single service binding through a Compose disposal effect.
+It no longer unregisters an unused receiver or broadcasts service-wide cleanup when
+only the activity closes. Bluetooth constructor selection checks available signatures
+before attempting them. Connection notification updates are deduplicated and limited
+to two per second while retaining the latest battery state; disconnect cancels queued
+updates.
+
+The Dynamic Island connection popup has an opaque black rounded background. Its
+silent looping video uses a TextureView inside the hardware-accelerated overlay so
+video, labels and background are composed together. Receiver registration and cleanup
+use the same context, and removing the popup releases its video player.
+
+The parser recognizes the upstream handshake response and the observed length-prefixed
+short head-tracking control/status envelopes. It retains them for diagnostics without
+feeding them to the motion parser; malformed frames still produce warnings. This does
+not claim complete head-tracking support. Cross-device media information is explicitly
+skipped when no other host is connected; that condition is not an AirPods disconnect.
+
+Hardware validation of this APK update is pending. The earlier android11.1/test2
+control-channel results remain documented in the module validation guide.
+
+Implementation references: [Compose effect ownership](https://developer.android.com/develop/ui/compose/side-effects#disposableeffect),
+[TextureView compositing](https://developer.android.com/reference/android/view/TextureView).
 
 ## Build locally
 

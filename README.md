@@ -1,7 +1,7 @@
 # LibrePods Android 11 fork
 
 An unofficial LibrePods fork for Android 11, retaining AirPods Pro 3 support.
-**Experimental:** testing on a real device is still pending.
+**Experimental:** initial tests passed on a OnePlus 7 Pro; validation is ongoing.
 
 See [setup, builds and technical details](ANDROID11.md).
 

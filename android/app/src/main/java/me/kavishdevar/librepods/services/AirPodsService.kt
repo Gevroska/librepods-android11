@@ -82,6 +82,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
 import me.kavishdevar.librepods.BuildConfig
 import me.kavishdevar.librepods.MainActivity
+import me.kavishdevar.librepods.utils.LatestUpdateDispatcher
 import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.bluetooth.AACPManager
 import me.kavishdevar.librepods.bluetooth.AACPManager.Companion.StemPressType
@@ -1684,6 +1685,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
             return
         }
         CoroutineScope(Dispatchers.Main).launch {
+            if (islandWindow?.isVisible == true) return@launch
             islandWindow = IslandWindow(service.applicationContext)
             islandWindow!!.show(
                 sharedPreferences.getString("name", "AirPods Pro").toString(),
@@ -2026,74 +2028,63 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         appWidgetManager.updateAppWidget(widgetIds, remoteViews)
     }
 
+    private data class ConnectionNotification(val title: String, val text: String, val reconnect: Boolean)
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    private val connectionNotifications = LatestUpdateDispatcher<ConnectionNotification> { state ->
+        val manager = getSystemService(NotificationManager::class.java)
+        val openApp = PendingIntent.getActivity(
+            this, 0, Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val builder = NotificationCompat.Builder(this, "airpods_connection_status")
+            .setSmallIcon(R.drawable.airpods)
+            .setContentTitle(state.title).setContentText(state.text)
+            .setContentIntent(openApp).setCategory(Notification.CATEGORY_STATUS)
+            .setPriority(NotificationCompat.PRIORITY_LOW).setOngoing(true)
+            .setOnlyAlertOnce(true)
+        if (state.reconnect) {
+            builder.addAction(R.drawable.ic_bluetooth, "Reconnect", PendingIntent.getService(
+                this, 0, Intent(this, AirPodsService::class.java).apply {
+                    action = "me.kavishdevar.librepods.RECONNECT_AFTER_REVERSE"
+                }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            ))
+        }
+        manager.notify(2, builder.build())
+        manager.cancel(1)
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     fun updateNotificationContent(
         connected: Boolean, airpodsName: String? = null, batteryList: List<Battery>? = null
     ) {
-        val notificationManager = getSystemService(NotificationManager::class.java)
-
-        val notificationIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            notificationIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        if (BluetoothConnectionManager.aacpSocket == null) {
+        // Serialize disconnects with queued updates so a stale notification cannot reappear.
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            val snapshot = batteryList?.map { it.copy() }
+            Handler(Looper.getMainLooper()).post { updateNotificationContent(connected, airpodsName, snapshot) }
             return
         }
-        if (BluetoothConnectionManager.aacpSocket?.isConnected == true) {
-            val updatedNotificationBuilder =
-                NotificationCompat.Builder(this, "airpods_connection_status")
-                    .setSmallIcon(R.drawable.airpods)
-                    .setContentTitle(airpodsName ?: config.deviceName).setContentText(
-                        """${
-                        batteryList?.find { it.component == BatteryComponent.LEFT }?.let {
-                            if (it.status != BatteryStatus.DISCONNECTED) {
-                                "L: ${if (it.status == BatteryStatus.CHARGING) "⚡" else ""} ${it.level}%"
-                            } else {
-                                ""
-                            }
-                        } ?: ""
-                    } ${
-                        batteryList?.find { it.component == BatteryComponent.RIGHT }?.let {
-                            if (it.status != BatteryStatus.DISCONNECTED) {
-                                "R: ${if (it.status == BatteryStatus.CHARGING) "⚡" else ""} ${it.level}%"
-                            } else {
-                                ""
-                            }
-                        } ?: ""
-                    } ${
-                        batteryList?.find { it.component == BatteryComponent.CASE }?.let {
-                            if (it.status != BatteryStatus.DISCONNECTED) {
-                                "Case: ${if (it.status == BatteryStatus.CHARGING) "⚡" else ""} ${it.level}%"
-                            } else {
-                                ""
-                            }
-                        } ?: ""
-                    }""").setContentIntent(pendingIntent).setCategory(Notification.CATEGORY_STATUS)
-                    .setPriority(NotificationCompat.PRIORITY_LOW).setOngoing(true)
-
-            if (disconnectedBecauseReversed) {
-                updatedNotificationBuilder.addAction(
-                    R.drawable.ic_bluetooth, "Reconnect", PendingIntent.getService(
-                        this, 0, Intent(this, AirPodsService::class.java).apply {
-                            action = "me.kavishdevar.librepods.RECONNECT_AFTER_REVERSE"
-                        }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                )
-            }
-
-            val updatedNotification = updatedNotificationBuilder.build()
-
-            notificationManager.notify(2, updatedNotification)
-            notificationManager.cancel(1)
-        } else if (!connected) {
-            notificationManager.cancel(2)
-        } else if (!config.bleOnlyMode && BluetoothConnectionManager.aacpSocket?.isConnected != true) {
-            showSocketConnectionFailureNotification("BluetoothConnectionManager.aacpSocket? created, but not connected. Check logs")
+        if (!connected) {
+            connectionNotifications.reset()
+            getSystemService(NotificationManager::class.java).cancel(2)
+            return
         }
+        val socket = BluetoothConnectionManager.aacpSocket ?: return
+        if (!socket.isConnected) {
+            connectionNotifications.reset()
+            if (!config.bleOnlyMode) showSocketConnectionFailureNotification(
+                "BluetoothConnectionManager.aacpSocket created, but not connected. Check logs"
+            )
+            return
+        }
+        val batteries = batteryList ?: batteryNotification.getBattery()
+        val text = listOf(BatteryComponent.LEFT to "L", BatteryComponent.RIGHT to "R", BatteryComponent.CASE to "Case")
+            .mapNotNull { (component, label) ->
+                batteries.find { it.component == component && it.status != BatteryStatus.DISCONNECTED }?.let {
+                    "$label: ${if (it.status == BatteryStatus.CHARGING) "\u26a1 " else ""}${it.level}%"
+                }
+            }.joinToString("  ")
+        connectionNotifications.submit(ConnectionNotification(airpodsName ?: config.deviceName, text, disconnectedBecauseReversed))
     }
 
     fun handleIncomingCall() {
@@ -3108,6 +3099,8 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
 
     @SuppressLint("MissingPermission")
     override fun onDestroy() {
+        connectionNotifications.close()
+        islandWindow?.forceClose()
         clearPacketLogs()
         Log.d(TAG, "Service stopped is being destroyed for some reason!")
 

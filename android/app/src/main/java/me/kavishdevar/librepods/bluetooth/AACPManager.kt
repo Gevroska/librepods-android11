@@ -399,6 +399,12 @@ class AACPManager {
 
     @OptIn(ExperimentalStdlibApi::class)
     fun receivePacket(packet: ByteArray) {
+        // The upstream Linux parser recognizes this distinct handshake-response header.
+        if (packet.size == 18 && packet.copyOfRange(0, 4).contentEquals(byteArrayOf(1, 0, 4, 0))) {
+            Log.d(TAG, "Received handshake response")
+            callback?.onUnknownPacketReceived(packet)
+            return
+        }
         if (!packet.toHexString().startsWith("04000400")) {
             Log.w(
                 TAG, "Received packet does not start with expected header: ${
@@ -485,12 +491,14 @@ class AACPManager {
 
             Opcodes.HEADTRACKING -> {
                 if (packet.size < 70) {
-                    Log.w(
-                        TAG, "Received HEADTRACKING packet too short: ${
-                        packet.joinToString(" ") {
-                            "%02X".format(it)
-                        }
-                    }")
+                    // Opcode 0x17 also carries length-prefixed control/status messages.
+                    // Keep them available to diagnostics; they are not motion samples.
+                    if (isHeadTrackingControlFrame(packet)) {
+                        Log.d(TAG, "Received head-tracking control/status frame (${packet.size} bytes)")
+                    } else {
+                        Log.w(TAG, "Unrecognized short head-tracking frame (${packet.size} bytes)")
+                    }
+                    callback?.onUnknownPacketReceived(packet)
                     return
                 }
                 callback?.onHeadTrackingReceived(packet)
@@ -905,9 +913,9 @@ class AACPManager {
             return false
         }
         Log.d(TAG, "SELFMAC: $selfMacAddress")
-        val targetMac = connectedDevices.find { it.mac != selfMacAddress }?.mac
+        val targetMac = connectedDevices.find { !it.mac.equals(selfMacAddress, ignoreCase = true) }?.mac
         if (targetMac == null) {
-            Log.w(TAG, "Cannot send Media Information packet: No connected device found")
+            Log.d(TAG, "No other host connected; skipping cross-device media information")
             return false
         }
         Log.d(TAG, "Sending Media Information packet to $targetMac")

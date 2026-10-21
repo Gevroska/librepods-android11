@@ -30,10 +30,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.res.Resources
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
-import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -53,7 +51,6 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.VideoView
 import androidx.core.net.toUri
 import androidx.dynamicanimation.animation.DynamicAnimation
 import androidx.dynamicanimation.animation.SpringAnimation
@@ -79,6 +76,7 @@ class IslandWindow(private val context: Context) {
     @SuppressLint("InflateParams")
     private val islandView: View = LayoutInflater.from(context).inflate(R.layout.island_window, null)
     private var isClosing = false
+    private var batteryReceiverRegistered = false
     private var params: WindowManager.LayoutParams? = null
 
     private var initialY = 0f
@@ -118,7 +116,7 @@ class IslandWindow(private val context: Context) {
                 updateBatteryDisplay(batteryList)
             } else if (intent?.action == AirPodsNotifications.DISCONNECT_RECEIVERS) {
                 try {
-                    context?.unregisterReceiver(this)
+                    unregisterBatteryReceiver()
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -169,7 +167,7 @@ class IslandWindow(private val context: Context) {
         if (ServiceManager.getService()?.islandOpen == true) return
         else ServiceManager.getService()?.islandOpen = true
 
-        val displayMetrics = Resources.getSystem().displayMetrics
+        val displayMetrics = this.context.resources.displayMetrics
         val width = (displayMetrics.widthPixels * 0.95).toInt()
         screenHeight = displayMetrics.heightPixels
 
@@ -229,11 +227,12 @@ class IslandWindow(private val context: Context) {
         val batteryIntentFilter = IntentFilter(AirPodsNotifications.BATTERY_DATA)
         batteryIntentFilter.addAction(AirPodsNotifications.DISCONNECT_RECEIVERS)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(batteryReceiver, batteryIntentFilter, Context.RECEIVER_EXPORTED)
+            this.context.registerReceiver(batteryReceiver, batteryIntentFilter, Context.RECEIVER_EXPORTED)
         } else {
-            context.registerReceiver(batteryReceiver, batteryIntentFilter)
+            this.context.registerReceiver(batteryReceiver, batteryIntentFilter)
         }
 
+        batteryReceiverRegistered = true
         ServiceManager.getService()?.sendBatteryBroadcast()
 
         containerView.removeAllViews()
@@ -248,7 +247,8 @@ class IslandWindow(private val context: Context) {
             width,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
@@ -373,19 +373,16 @@ class IslandWindow(private val context: Context) {
             }
         }
 
-        val videoView = islandView.findViewById<VideoView>(R.id.island_video_view)
+        val videoView = islandView.findViewById<IslandVideoView>(R.id.island_video_view)
         val videoUri = "android.resource://me.kavishdevar.librepods/${R.raw.island}".toUri()
-        videoView.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
-        videoView.setVideoURI(videoUri)
-        videoView.setOnPreparedListener { mediaPlayer ->
-            mediaPlayer.isLooping = true
-            videoView.start()
-        }
+        videoView.play(videoUri)
 
         try {
             windowManager.addView(containerView, params)
         } catch (e: Exception) {
-            e.printStackTrace()
+            e("IslandWindow", "Cannot attach connection popup", e)
+            cleanupAndRemoveView()
+            return
         }
 
         islandView.post {
@@ -415,7 +412,7 @@ class IslandWindow(private val context: Context) {
         val connectedText = islandView.findViewById<TextView>(R.id.island_connected_text)
         val deviceText = islandView.findViewById<TextView>(R.id.island_device_name)
         val batteryView = islandView.findViewById<FrameLayout>(R.id.island_battery_container)
-        val videoView = islandView.findViewById<VideoView>(R.id.island_video_view)
+        val videoView = islandView.findViewById<IslandVideoView>(R.id.island_video_view)
 
         connectedText.post {
             initialConnectedTextY = connectedText.y
@@ -433,7 +430,7 @@ class IslandWindow(private val context: Context) {
             islandView.findViewById<TextView>(R.id.island_connected_text)
             val deviceText = islandView.findViewById<TextView>(R.id.island_device_name)
             islandView.findViewById<FrameLayout>(R.id.island_battery_container)
-            islandView.findViewById<VideoView>(R.id.island_video_view)
+            islandView.findViewById<IslandVideoView>(R.id.island_video_view)
 
             val stretchFactor = 1f + (stretchAmount / 300f).coerceAtMost(4.0f)
             val newMinHeight = (initialHeight * stretchFactor).toInt()
@@ -447,7 +444,7 @@ class IslandWindow(private val context: Context) {
 
             val background = mainLayout.background
             if (background is GradientDrawable) {
-                val cornerRadius = 56f
+                val cornerRadius = 56f * context.resources.displayMetrics.density
                 background.cornerRadius = cornerRadius
             }
 
@@ -604,7 +601,7 @@ class IslandWindow(private val context: Context) {
             containerView.alpha = progress
 
             if (progress < 0.7f) {
-                islandView.findViewById<VideoView>(R.id.island_video_view).visibility = View.GONE
+                islandView.findViewById<IslandVideoView>(R.id.island_video_view).visibility = View.GONE
             }
         }
         normalizeAnimator.addListener(object : AnimatorListenerAdapter() {
@@ -658,17 +655,17 @@ class IslandWindow(private val context: Context) {
             isClosing = true
 
             try {
-                context.unregisterReceiver(batteryReceiver)
+                unregisterBatteryReceiver()
             } catch (e: Exception) {
 //                e.printStackTrace()
             }
 
             ServiceManager.getService()?.islandOpen = false
-            autoCloseHandler?.removeCallbacks(autoCloseRunnable ?: return)
+            autoCloseRunnable?.let { autoCloseHandler?.removeCallbacks(it) }
 
             resetStretchEffects()
 
-            val videoView = islandView.findViewById<VideoView>(R.id.island_video_view)
+            val videoView = islandView.findViewById<IslandVideoView>(R.id.island_video_view)
             try {
                 videoView.stopPlayback()
             } catch (e: Exception) {
@@ -695,11 +692,22 @@ class IslandWindow(private val context: Context) {
         }
     }
 
+    private fun unregisterBatteryReceiver() {
+        if (batteryReceiverRegistered) {
+            context.unregisterReceiver(batteryReceiver)
+            batteryReceiverRegistered = false
+        }
+    }
+
     private fun cleanupAndRemoveView() {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             Handler(Looper.getMainLooper()).post { cleanupAndRemoveView() }
             return
         }
+        autoCloseRunnable?.let { autoCloseHandler?.removeCallbacks(it) }
+        unregisterBatteryReceiver()
+        islandView.findViewById<IslandVideoView>(R.id.island_video_view).stopPlayback()
+        ServiceManager.getService()?.islandOpen = false
         try {
             containerView.visibility = View.GONE
         } catch (e: Exception) {
@@ -715,7 +723,7 @@ class IslandWindow(private val context: Context) {
         isClosing = false
         // Make sure all animations are canceled
         try {
-            springAnimation.cancel()
+            if (::springAnimation.isInitialized) springAnimation.cancel()
         } catch (e: Exception) {
             e("IslandWindow", "Error cancelling spring animation $e")
         }
@@ -736,16 +744,16 @@ class IslandWindow(private val context: Context) {
             isClosing = true
 
             try {
-                context.unregisterReceiver(batteryReceiver)
+                unregisterBatteryReceiver()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
 
             ServiceManager.getService()?.islandOpen = false
-            autoCloseHandler?.removeCallbacks(autoCloseRunnable ?: return)
+            autoCloseRunnable?.let { autoCloseHandler?.removeCallbacks(it) }
 
             // Cancel all ongoing animations
-            springAnimation.cancel()
+            if (::springAnimation.isInitialized) springAnimation.cancel()
             flingAnimator.cancel()
 
             // Immediately remove the view without animations
