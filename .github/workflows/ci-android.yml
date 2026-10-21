@@ -22,6 +22,9 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: android-actions/setup-android@v3
+        with:
+          # The legacy tools package is no longer available; install our pinned packages below.
+          packages: ''
       - uses: gradle/actions/setup-gradle@v4
       - name: Install pinned Android tools
         run: sdkmanager 'platforms;android-37' 'build-tools;37.0.0' 'ndk;30.0.14904198' 'cmake;3.22.1'
